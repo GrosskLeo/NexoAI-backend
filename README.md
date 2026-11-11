@@ -1,83 +1,103 @@
-# Nexo — Backend
+# Nexo
 
-API do **Nexo**, sistema de análise inteligente de reuniões desenvolvido para a TOTVS.  
-Processa transcrições, gera insights e permite perguntas sobre as reuniões via RAG.
+Plataforma de análise inteligente de reuniões desenvolvida para a TOTVS.  
+Processa transcrições, gera insights e permite perguntas contextuais sobre as reuniões usando RAG.
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.141-green?logo=fastapi)
-![LangChain](https://img.shields.io/badge/LangChain-1.3-orange)
-![Qdrant](https://img.shields.io/badge/Qdrant-vector%20DB-red)
+![FastAPI](https://img.shields.io/badge/FastAPI-green?logo=fastapi)
+![React](https://img.shields.io/badge/React-19-blue?logo=react)
+![Vite](https://img.shields.io/badge/Vite-purple?logo=vite)
+![LangChain](https://img.shields.io/badge/LangChain-orange)
+![Qdrant](https://img.shields.io/badge/Qdrant-red)
 
 ## Visão geral
 
-O backend é responsável por:
+O Nexo é composto por dois serviços:
 
-- Autenticação e gestão de usuários
-- Cadastro e gerenciamento de reuniões e transcrições
-- Pipeline de **RAG** (Retrieval-Augmented Generation) sobre as transcrições
-- Chat contextual por reunião usando embeddings + Gemini
-- Análise de sentimento e extração de informações
+- **Backend** — API FastAPI com pipeline de RAG (LangChain + Gemini + Qdrant)
+- **Frontend** — Dashboard React com visualizações, KPIs e chat contextual por reunião
 
-### Stack principal
+### Funcionalidades
 
-| Tecnologia | Uso |
-|------------|-----|
-| **FastAPI** | API REST |
-| **LangChain + LangGraph** | Orquestração do RAG |
-| **Google Gemini** | Embeddings (`gemini-embedding-001`) + geração |
-| **Qdrant** | Banco vetorial (busca por similaridade) |
-| **SQLAlchemy** | Persistência relacional |
-| **Uvicorn** | Servidor ASGI |
+- Upload e gestão de reuniões e transcrições
+- Análise de sentimento e extração de insights
+- Chat por reunião usando RAG (pergunta → busca no Qdrant → resposta do Gemini)
+- Dashboard com gráficos, alertas de concorrentes e métricas
+- Autenticação e controle de usuários
+
+## Stack
+
+| Camada | Tecnologias |
+|--------|-------------|
+| Frontend | React 19, Vite, Tailwind CSS 4, shadcn/ui, Recharts, React Router |
+| Backend | FastAPI, LangChain, LangGraph, SQLAlchemy, Uvicorn |
+| IA | Google Gemini (`gemini-embedding-001` + modelos generativos) |
+| Vetor | Qdrant (busca por similaridade, 3072 dimensões) |
 
 ## Como rodar
 
-### Pré-requisitos
+### 1. Backend
 
-- Python 3.11+
-- Conta no Google AI Studio (chave do Gemini)
-- Qdrant Cloud (ou local)
+#### Variáveis de ambiente
 
-### 1. Variáveis de ambiente
-
-Crie um arquivo `.env` na raiz:
+Crie um `.env` na pasta do backend:
 
 ```env
+# Gemini + Qdrant (obrigatórios)
 GOOGLE_API_KEY=sua_chave_gemini
 QDRANT_URL=https://seu-cluster.qdrant.io
 QDRANT_API_KEY=sua_chave_qdrant
 
-# Opcional (banco)
+# Banco de dados
 DATABASE_URL=sqlite:///./mydatabase.db
+
+# Usuário admin (criado automaticamente no startup)
+ADMIN_NAME=Admin
+ADMIN_EMAIL=admin@exemplo.com
+ADMIN_PASSWORD=senha_forte_aqui
 ```
 
-### 2. Instalação
+#### Instalação e execução
 
 ```bash
+cd backend
 python -m venv venv
-source venv/bin/activate   # Linux/Mac
-# ou venv\Scripts\activate  # Windows
+source venv/bin/activate        # Linux/Mac
+# ou venv\Scripts\activate      # Windows
 
 pip install -r requirements.txt
-```
-
-### 3. Executar
-
-```bash
 uvicorn app.main:app --reload
 ```
 
-A API sobe em `http://127.0.0.1:8000`.  
-Documentação interativa: `http://127.0.0.1:8000/docs`
+API disponível em `http://127.0.0.1:8000`  
+Documentação: `http://127.0.0.1:8000/docs`
 
-## Endpoints principais
+### 2. Frontend
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| `POST` | `/auth/login` | Login |
-| `POST` | `/meetings` | Criar reunião |
-| `GET` | `/meetings` | Listar reuniões |
-| `POST` | `/meetings/{id}/chat` | Chat RAG sobre a reunião |
-| `GET` | `/users` | Gestão de usuários |
+#### Variáveis de ambiente
+
+Crie um `.env` na pasta do frontend:
+
+```env
+VITE_API_URL=http://127.0.0.1:8000
+```
+
+#### Instalação e execução
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Aplicação disponível em `http://localhost:5173`
+
+### Build de produção (frontend)
+
+```bash
+npm run build
+npm run preview
+```
 
 ## Arquitetura do RAG
 
@@ -99,29 +119,42 @@ Contexto + prompt → Gemini
 Resposta
 ```
 
-## Estrutura
+## Endpoints principais (backend)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/auth/login` | Login |
+| `POST` | `/meetings` | Criar reunião |
+| `GET` | `/meetings` | Listar reuniões |
+| `POST` | `/meetings/{id}/chat` | Chat RAG sobre a reunião |
+
+## Estrutura dos repositórios
 
 ```
-app/
-├── main.py                 # Entrada da aplicação
-├── database.py
-├── langchain/
-│   ├── langchain.py
-│   └── rag_service.py      # Lógica principal do RAG
-├── models/
-├── routes/
-│   ├── auth_routes.py
-│   ├── chat_routes.py
-│   ├── meeting_routes.py
-│   └── user_routes.py
-└── enums/
+backend/
+├── app/
+│   ├── main.py
+│   ├── langchain/
+│   │   └── rag_service.py
+│   ├── routes/
+│   └── models/
+└── requirements.txt
+
+frontend/
+├── src/
+│   ├── components/dashboard/
+│   ├── pages/
+│   ├── api/
+│   └── router/
+└── package.json
 ```
 
 ## Observações
 
 - O chat usa **Form Data** (`multipart/form-data`).
-- Cada reunião tem filtro por `meeting_id` no Qdrant.
-- A collection é criada automaticamente na primeira execução (3072 dimensões, distância cosseno).
+- Cada reunião é filtrada por `meeting_id` no Qdrant.
+- A collection no Qdrant é criada automaticamente na primeira execução.
+- O usuário admin é criado no startup se as variáveis `ADMIN_*` estiverem definidas.
 
 ---
 
